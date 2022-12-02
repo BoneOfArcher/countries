@@ -41,13 +41,15 @@ const Home: FC<HomeProps> = (props) => {
     }, [loading])
     useEffect(() => {
         if (!countiesList) return
-        console.log(region)
-        let newCountries = region
-            ? countiesList?.filter(country => country.region.toLowerCase() === region.toLowerCase())
+        console.log(searchCountry)
+        let newCountries = region || searchCountry
+            ? countiesList?.filter(country => {
+                return country.name.common.toLowerCase().includes(searchCountry.toLowerCase())
+                    && (region
+                        ? country.region.toLowerCase() === region.toLowerCase()
+                        : true)
+            })
             : [...countiesList]
-        newCountries = searchCountry
-            ? newCountries.filter(country => country.name.common.toLowerCase().includes(searchCountry))
-            : newCountries
         setCountries(newCountries)
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [region, searchCountry])

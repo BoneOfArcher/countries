@@ -30,9 +30,8 @@ const CountryCard: FC<Country> = (props) => {
         population,
         capital,
     } = props
-
+    console.log('card')
     return (
-
         <Grid item lg={3} md={4} sm={6} xs={12}>
             <StyledLink to={`${Url.details}/${name.official}`}>
                 <Card
@@ -78,4 +77,4 @@ const CountryCard: FC<Country> = (props) => {
     );
 };
 
-export default CountryCard;
+export default React.memo(CountryCard);
