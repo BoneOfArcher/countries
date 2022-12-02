@@ -14,6 +14,7 @@ import {
 import CircularProgress from '@mui/material/CircularProgress';
 import CountryCard from "../Components/CountryCard";
 import { useAllCountries } from "../core/request";
+import InfiniteScroll from "react-infinite-scroll-component";
 
 const regionOptions = ['Oceania', 'Americas', 'Antarctic', 'Africa', 'Europe', 'Asia']
 
@@ -28,14 +29,26 @@ const Home: FC<HomeProps> = (props) => {
         setCountiesList
     } = props
     const [countries, setCountries] = useState(countiesList)
+    const [visibleCountries, setVisibleCountries] = useState<Country[]>([])
     const [region, setRegion] = useState("")
     const [searchCountry, setSearchCountry] = useState("")
     const [data, loading] = useAllCountries(Boolean(countiesList))
+
+    const setStartVisibleCountries = (data?: Country[]) => {
+        setVisibleCountries(() => {
+            const visibleCountries = [...data || []]
+            visibleCountries.length = visibleCountries.length > 20
+                ? 20
+                : visibleCountries.length
+            return visibleCountries
+        })
+    }
     useEffect(() => {
         if (countries) return
         if (!loading) {
             setCountries(data)
             setCountiesList(data)
+            setStartVisibleCountries(data)
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [loading])
@@ -51,8 +64,15 @@ const Home: FC<HomeProps> = (props) => {
             })
             : [...countiesList]
         setCountries(newCountries)
+        setStartVisibleCountries(newCountries)
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [region, searchCountry])
+
+    const setNextVisibleCountries = () => {
+        const newCountries = countries?.slice(visibleCountries.length, visibleCountries.length + 20)
+        const newVisibleCountries = visibleCountries.concat(newCountries || [])
+        setVisibleCountries(newVisibleCountries)
+    }
 
     const regionChangeHandler = (event: SelectChangeEvent) => {
         setRegion(event.target.value)
@@ -66,25 +86,17 @@ const Home: FC<HomeProps> = (props) => {
                 mt={5}
                 component={"form"}
                 display={"flex"}
-                alignItems={{
-                    xs: "initial",
-                    sm: "center",
-                }}
-                gap={{
-                    xs: 3,
-                    sm: "initial",
-                }}
-                flexDirection={{
-                    xs: "column",
-                    sm: "row",
-                }}
-                justifyContent={{
-                    xs: "initial",
-                    sm: "space-between",
-                }}
+                alignItems={{xs: "initial", sm: "center",}}
+                gap={{xs: 3, sm: "initial",}}
+                flexDirection={{xs: "column", sm: "row",}}
+                justifyContent={{xs: "initial", sm: "space-between",}}
             >
-                <TextField value={searchCountry} placeholder={"Search for a country"} onChange={searchChangeHandler}
-                           variant={"outlined"}/>
+                <TextField
+                    value={searchCountry}
+                    placeholder={"Search for a country"}
+                    onChange={searchChangeHandler}
+                    variant={"outlined"}
+                />
                 <FormControl variant="filled" sx={{m: 1, minWidth: 120, maxWidth: 150}}>
                     <InputLabel id={"region-label"}>Region</InputLabel>
                     <Select
@@ -101,27 +113,30 @@ const Home: FC<HomeProps> = (props) => {
                 </FormControl>
             </Box>
             <Box mt={5}>
-                <Grid
-                    container
-                    spacing={1}
-                    columnSpacing={1}
-                    rowSpacing={4}
-                    direction={{
-                        xs: "column",
-                        sm: "row"
-                    }}
-                    alignItems={{
-                        xs: "center",
-                        sm: "initial",
-                    }}
-                >
-                    {loading
-                        ? <CircularProgress color="inherit"/>
-                        : countries?.map(country => (
-                            <CountryCard key={country.name.official} {...country}/>
-                        ))
-                    }
-                </Grid>
+                {loading
+                    ? <CircularProgress color={"inherit"}/>
+                    : <InfiniteScroll
+                        next={setNextVisibleCountries}
+                        hasMore={visibleCountries.length < (countries?.length || 0)}
+                        loader={<CircularProgress color={"inherit"}/>}
+                        dataLength={visibleCountries.length}
+                        style={{padding: "6px"}}
+                    >
+                        <Grid
+                            container
+                            spacing={1}
+                            columnSpacing={1}
+                            rowSpacing={4}
+                            direction={{xs: "column", sm: "row"}}
+                            alignItems={{xs: "center", sm: "initial",}}
+                        >
+                            {visibleCountries?.map(country => (
+                                <CountryCard key={country.name.official} {...country}/>
+                            ))}
+                        </Grid>
+                    </InfiniteScroll>
+                }
+
             </Box>
         </Container>
     );
